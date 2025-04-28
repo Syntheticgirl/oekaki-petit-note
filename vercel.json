@@ -1,9 +1,10 @@
 {  
-  "functions": {  
-    "public/**/*.php": {
-      "runtime": "vercel-php@0.7.3"
+  "functions": {
+    "api/**/*.php": {
+      "runtime": "vercel-php@0.7.3",
+      "includeFiles": "public/**"
     }
-  },  
+  },
   "routes": [  
     { "src": "/(.*\\.php)", "dest": "/public/$1" },  
     { "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|webp|svg|ico))", "dest": "/public/$1" },  
