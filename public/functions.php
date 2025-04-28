@@ -967,8 +967,17 @@ function check_AsyncRequest($upfile=''): void {
 // テンポラリ内のゴミ除去 
 function deltemp(): void {
 	global $check_password_input_error_count;
-	$handle = opendir(TEMP_DIR);
-	while ($file = readdir($handle)) {
+	
+	if (!is_dir(TEMP_DIR)) {
+		return;
+	}
+	
+	$handle = @opendir(TEMP_DIR);
+	if ($handle === false) {
+		return;
+	}
+	
+	while (($file = readdir($handle)) !== false) {
 		if(!is_dir(TEMP_DIR.$file) && is_file(TEMP_DIR.$file)){
 			$file=basename($file);
 			//pchアップロードペイントファイル削除
@@ -986,6 +995,7 @@ function deltemp(): void {
 		}
 	}
 	closedir($handle);
+	
 	$_file=__DIR__.'/template/errorlog/error.log';
 	if(!$check_password_input_error_count){
 		safe_unlink($_file);
@@ -1120,21 +1130,31 @@ function is_badhost(): bool {
 function init(): void {
 	global $r2Storage;
 	
+	// 必要なディレクトリを作成
+	$dirs = [
+		__DIR__."/src",
+		__DIR__."/temp",
+		__DIR__."/thumbnail",
+		__DIR__."/log",
+		__DIR__."/webp",
+		__DIR__."/template/cache"
+	];
+	
+	foreach ($dirs as $dir) {
+		if (!is_dir($dir)) {
+			@mkdir($dir, 0777, true);
+		}
+	}
+	
 	// R2ストレージが利用可能な場合は、ファイルシステムの操作をスキップ
 	if (isset($r2Storage)) {
 		return;
 	}
 	
 	// 従来のファイルシステム操作（R2が利用できない場合のフォールバック）
-	check_dir(__DIR__."/src");
-	check_dir(__DIR__."/temp");
-	check_dir(__DIR__."/thumbnail");
-	check_dir(__DIR__."/log");
-	check_dir(__DIR__."/webp");
-	check_dir(__DIR__."/template/cache");
 	if(!is_file(LOG_DIR.'alllog.log')){
-		file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
-		chmod(LOG_DIR.'alllog.log',0600);	
+		@file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
+		@chmod(LOG_DIR.'alllog.log',0600);    
 	}
 }
 

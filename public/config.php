@@ -606,11 +606,11 @@ define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//半角英数16文字
 
 // 変更しないでください
 // テンポラリ
-define("TEMP_DIR","temp/");
+define("TEMP_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/temp/' : "temp/");
 // ログ
-define("LOG_DIR","log/");
+define("LOG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/log/' : "log/");
 // 画像
-define("IMG_DIR","src/");
-// 画像
-define("THUMB_DIR","thumbnail/");
+define("IMG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/src/' : "src/");
+// サムネイル
+define("THUMB_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/thumbnail/' : "thumbnail/");
 
