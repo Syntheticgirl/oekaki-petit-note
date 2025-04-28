@@ -10,11 +10,5 @@
     { "src": "/template/(.*)",                                   "dest": "/public/template/$1" },
     { "src": "/app/(.*)",                                        "dest": "/public/app/$1"      },
     { "src": "/(.*)", "dest": "/api/index.php" }
-  ],
-  "env": {
-    "R2_ENDPOINT": "@r2_endpoint",
-    "R2_ACCESS_KEY_ID": "@r2_access_key_id",
-    "R2_SECRET_ACCESS_KEY": "@r2_secret_access_key",
-    "R2_BUCKET": "@r2_bucket"
-  }
+  ]
 }
