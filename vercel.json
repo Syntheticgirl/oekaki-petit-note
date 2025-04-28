@@ -1,18 +1,14 @@
 {
   "functions": {
-    // api 以下にある全 PHP を serverless 化
     "api/**/*.php": {
       "runtime": "vercel-php@0.7.3",
       "memory": 512
     }
   },
   "routes": [
-    // ↓=== 静的アセット (画像・CSS・JS) をそのまま配信 ===↓
     { "src": "/(.*\\.(?:css|js|png|jpg|jpeg|gif|webp|svg|ico))", "dest": "/public/$1" },
     { "src": "/template/(.*)",                                   "dest": "/public/template/$1" },
     { "src": "/app/(.*)",                                        "dest": "/public/app/$1"      },
-    // ↑======================================================↑
-    // それ以外は全部 PHP ラムダへ
     { "src": "/(.*)", "dest": "/api/index.php" }
   ]
 }
