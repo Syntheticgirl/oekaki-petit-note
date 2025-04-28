@@ -1118,7 +1118,14 @@ function is_badhost(): bool {
 
 //初期化
 function init(): void {
+	global $r2Storage;
 	
+	// R2ストレージが利用可能な場合は、ファイルシステムの操作をスキップ
+	if (isset($r2Storage)) {
+		return;
+	}
+	
+	// 従来のファイルシステム操作（R2が利用できない場合のフォールバック）
 	check_dir(__DIR__."/src");
 	check_dir(__DIR__."/temp");
 	check_dir(__DIR__."/thumbnail");
@@ -1126,15 +1133,19 @@ function init(): void {
 	check_dir(__DIR__."/webp");
 	check_dir(__DIR__."/template/cache");
 	if(!is_file(LOG_DIR.'alllog.log')){
-	file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
-	chmod(LOG_DIR.'alllog.log',0600);	
+		file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
+		chmod(LOG_DIR.'alllog.log',0600);	
 	}
 }
 
 //ディレクトリ作成
 function check_dir ($path): void {
-
 	$msg=initial_error_message();
+
+	// Vercel環境の場合はファイルシステムの操作をスキップ
+	if (getenv('VERCEL')) {
+		return;
+	}
 
 	if (!is_dir($path)) {
 			mkdir($path, 0707);

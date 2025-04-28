@@ -12,9 +12,15 @@ $r2Config = [
     'prefix' => getenv('R2_PREFIX') ?? 'petitnote/',  
     'public_url' => getenv('R2_PUBLIC_URL') ?? null, // カスタムドメインがある場合  
 ];  
-  
-$r2Storage = new R2Storage($r2Config);  
-  
+
+// 環境変数が設定されている場合のみR2ストレージを初期化
+if ($r2Config['endpoint'] && $r2Config['access_key_id'] && $r2Config['secret_access_key'] && $r2Config['bucket']) {
+    $r2Storage = new R2Storage($r2Config);
+} else {
+    error_log('R2 storage configuration is incomplete. Falling back to local file system.');
+    $r2Storage = null;
+}
+
 // キャッシュの設定  
 $fileCache = [];  
 $cacheExpiry = [];  
@@ -34,7 +40,7 @@ function openLogFile($filename, $mode) {
             $content = $fileCache[$path];  
         } else {  
             // R2から読み込み  
-            $content = $r2Storage->readFile($path);  
+            $content = $r2Storage ? $r2Storage->readFile($path) : file_get_contents($path);  
             if ($content === false) {  
                 // ファイルが存在しない場合は空のコンテンツを返す  
                 $content = '';  
@@ -71,7 +77,7 @@ function closeFile($fp) {
         fclose($fp['handle']);  
           
         // R2に保存  
-        $result = $r2Storage->writeFile($fp['path'], $content);  
+        $result = $r2Storage ? $r2Storage->writeFile($fp['path'], $content) : file_put_contents($fp['path'], $content);  
           
         // キャッシュを更新  
         if ($result) {  
@@ -93,7 +99,7 @@ function file_exists_wrapper($path) {
     // ローカルパスの場合はデフォルトの関数を使用  
     if (strpos($path, 'log/') === 0 || strpos($path, 'src/') === 0 ||   
         strpos($path, 'thumbnail/') === 0 || strpos($path, 'temp/') === 0) {  
-        return $r2Storage->fileExists($path);  
+        return $r2Storage ? $r2Storage->fileExists($path) : file_exists($path);  
     }  
       
     // それ以外はデフォルトの関数を使用  
@@ -114,7 +120,7 @@ function file_get_contents_wrapper($path) {
             return $fileCache[$path];  
         }  
           
-        $content = $r2Storage->readFile($path);  
+        $content = $r2Storage ? $r2Storage->readFile($path) : file_get_contents($path);  
         if ($content !== false) {  
             // キャッシュに保存  
             $fileCache[$path] = $content;  
@@ -135,7 +141,7 @@ function file_put_contents_wrapper($path, $content) {
     if (strpos($path, 'log/') === 0 || strpos($path, 'src/') === 0 ||   
         strpos($path, 'thumbnail/') === 0 || strpos($path, 'temp/') === 0) {  
           
-        $result = $r2Storage->writeFile($path, $content);  
+        $result = $r2Storage ? $r2Storage->writeFile($path, $content) : file_put_contents($path, $content);  
           
         if ($result) {  
             // キャッシュを更新  
@@ -158,7 +164,7 @@ function unlink_wrapper($path) {
     if (strpos($path, 'log/') === 0 || strpos($path, 'src/') === 0 ||   
         strpos($path, 'thumbnail/') === 0 || strpos($path, 'temp/') === 0) {  
           
-        $result = $r2Storage->deleteFile($path);  
+        $result = $r2Storage ? $r2Storage->deleteFile($path) : unlink($path);  
           
         if ($result) {  
             // キャッシュから削除  
@@ -181,7 +187,7 @@ function scandir_wrapper($directory) {
     if ($directory === 'log/' || $directory === 'src/' ||   
         $directory === 'thumbnail/' || $directory === 'temp/') {  
           
-        $files = $r2Storage->listFiles($directory);  
+        $files = $r2Storage ? $r2Storage->listFiles($directory) : scandir($directory);  
         // 現在のディレクトリと親ディレクトリを追加（scandir互換にするため）  
         array_unshift($files, '.', '..');  
         return $files;  
@@ -194,7 +200,8 @@ function scandir_wrapper($directory) {
 // 画像URLの取得  
 function getImageUrl($path) {  
     global $r2Storage;  
-    return $r2Storage->getFileUrl($  
+    return $r2Storage ? $r2Storage->getFileUrl($path) : $path;  
+}  
   
 Wiki pages you might want to explore:  
 - [Overview (satopian/Petit_Note)](/wiki/satopian/Petit_Note#1)  
