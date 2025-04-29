@@ -20,6 +20,17 @@ if (getenv('VERCEL')) {
 // 既存のコード
 require_once 'config.php';
 require_once 'functions.php';
+require_once 'R2Storage.php';
+
+// R2ストレージの初期化
+if ($use_r2_storage) {
+    $r2Storage = new R2Storage(
+        $r2_account_id,
+        $r2_access_key_id,
+        $r2_secret_access_key,
+        $r2_bucket_name
+    );
+}
 
 // キャッシュディレクトリの設定
 if (!defined('CACHE_DIR')) {
