@@ -1,14 +1,24 @@
 {
   "functions": {
     "api/**/*.php": {
-      "runtime": "vercel-php@0.7.3",
-      "memory": 512
+      "runtime": "vercel-php@0.7.3"
     }
   },
+  "builds": [  
+    { "src": "api/index.php", "use": "@vercel/php" },  
+    { "src": "public/**/*.php", "use": "@vercel/php" },  
+    { "src": "public/**/*.!(php)", "use": "@vercel/static" }  
+  ],   
   "routes": [
     { "src": "/(.*\\.(?:css|js|png|jpg|jpeg|gif|webp|svg|ico))", "dest": "/public/$1" },
     { "src": "/template/(.*)",                                   "dest": "/public/template/$1" },
     { "src": "/app/(.*)",                                        "dest": "/public/app/$1"      },
     { "src": "/(.*)", "dest": "/api/index.php" }
-  ]
+  ],
+  "env": {  
+    "R2_ACCESS_KEY_ID": "@r2_access_key_id",  
+    "R2_SECRET_ACCESS_KEY": "@r2_secret_access_key",  
+    "R2_ENDPOINT": "@r2_endpoint",  
+    "R2_BUCKET": "@r2_bucket"  
+  }  
 }
