@@ -1,4 +1,26 @@
 <?php
+// 必要なディレクトリを作成
+if (getenv('VERCEL')) {
+    $dirs = [
+        sys_get_temp_dir() . '/petitnote/log',
+        sys_get_temp_dir() . '/petitnote/temp',
+        sys_get_temp_dir() . '/petitnote/src',
+        sys_get_temp_dir() . '/petitnote/thumbnail',
+        sys_get_temp_dir() . '/petitnote/webp',
+        sys_get_temp_dir() . '/petitnote/template/cache'
+    ];
+    
+    foreach ($dirs as $dir) {
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+    }
+}
+
+// 既存のコード
+require_once 'config.php';
+require_once 'functions.php';
+
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 $petit_ver='v1.86.0';
@@ -2313,20 +2335,39 @@ function view(): void {
 	session_sta();
 	unset ($_SESSION['enableappselect']);
 
-	$fp=fopen(LOG_DIR."alllog.log","r");
-	$article_nos=[];
-	$count_alllog=0;
-	while ($_line = fgets($fp)) {
-		if(!trim($_line)){
-			continue;
+	// alllog.logを開く
+	$logFile = LOG_DIR."alllog.log";
+	if (!is_file($logFile)) {
+		// ファイルが存在しない場合は作成
+		$logDir = dirname($logFile);
+		if (!is_dir($logDir)) {
+			@mkdir($logDir, 0777, true);
 		}
-		if($page <= $count_alllog && $count_alllog < $page+$pagedef){
-			list($_no)=explode("\t",trim($_line),2);
-			$article_nos[]=$_no;	
-		}
-		++$count_alllog;//処理の後半で記事数のカウントとして使用
+		@file_put_contents($logFile, '', FILE_APPEND|LOCK_EX);
+		@chmod($logFile, 0600);
 	}
-	fclose($fp);
+
+	$fp = @fopen($logFile, 'r');
+	if ($fp === false) {
+		// ファイルを開けなかった場合のエラーハンドリング
+		error_log("Failed to open log file: " . $logFile);
+		$article_nos = [];
+		$count_alllog = 0;
+	} else {
+		$article_nos = [];
+		$count_alllog = 0;
+		while ($_line = fgets($fp)) {
+			if(!trim($_line)){
+				continue;
+			}
+			if($page <= $count_alllog && $count_alllog < $page+$pagedef){
+				list($_no) = explode("\t", trim($_line), 2);
+				$article_nos[] = $_no;    
+			}
+			++$count_alllog;
+		}
+		fclose($fp);
+	}
 
 	$index_cache_json = __DIR__.'/template/cache/index_cache.json';
 
@@ -2497,8 +2538,8 @@ function res (): void {
 	}
 	//投稿者名の特殊文字を全角に
 	foreach($rresname as $key => $val){
-		$rep=str_replace('&quot;','”',$val);
-		$rep=str_replace('&#039;','’',$rep);
+		$rep=str_replace('&quot;','"',$val);
+		$rep=str_replace('&#039;','\'',$rep);
 		$rep=str_replace('&lt;','＜',$rep);
 		$rep=str_replace('&gt;','＞',$rep);
 		$rresname[$key]=str_replace('&amp;','＆',$rep);

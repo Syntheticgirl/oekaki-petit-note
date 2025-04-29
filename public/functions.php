@@ -1152,9 +1152,16 @@ function init(): void {
 	}
 	
 	// 従来のファイルシステム操作（R2が利用できない場合のフォールバック）
-	if(!is_file(LOG_DIR.'alllog.log')){
-		@file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
-		@chmod(LOG_DIR.'alllog.log',0600);    
+	$logFile = LOG_DIR.'alllog.log';
+	if(!is_file($logFile)){
+		// ディレクトリが存在することを確認
+		$logDir = dirname($logFile);
+		if (!is_dir($logDir)) {
+			@mkdir($logDir, 0777, true);
+		}
+		// ファイルを作成
+		@file_put_contents($logFile, '', FILE_APPEND|LOCK_EX);
+		@chmod($logFile, 0600);    
 	}
 }
 
