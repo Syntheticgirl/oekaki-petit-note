@@ -605,17 +605,6 @@ define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//半角英数16文字
 /*変更不可*/
 
 // 変更しないでください
-// テンポラリ
-define("TEMP_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/temp/' : "temp/");
-// ログ
-define("LOG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/log/' : "log/");
-// 画像
-define("IMG_DIR", getenv('VERCEL') ? 'src/' : "src/");
-// サムネイル
-define("THUMB_DIR", getenv('VERCEL') ? 'thumbnail/' : "thumbnail/");
-// キャッシュ
-define("CACHE_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/cache/' : "template/cache/");
-
 // Vercel環境用の設定
 $use_r2_storage = true;
 $r2_account_id = "YOUR_R2_ACCOUNT_ID";
@@ -623,19 +612,37 @@ $r2_access_key_id = "YOUR_R2_ACCESS_KEY_ID";
 $r2_secret_access_key = "YOUR_R2_SECRET_ACCESS_KEY";
 $r2_bucket_name = "YOUR_R2_BUCKET_NAME";
 
-// 一時ファイルの保存先を/tmpに変更
-define('TEMP_DIR', '/tmp/petitnote/temp/');
-define('IMG_DIR', '/tmp/petitnote/src/');
-define('THUMB_DIR', '/tmp/petitnote/thumbnail/');
+// ディレクトリ設定
+if (getenv('VERCEL')) {
+    // Vercel環境用の設定
+    define("TEMP_DIR", sys_get_temp_dir() . '/petitnote/temp/');
+    define("LOG_DIR", sys_get_temp_dir() . '/petitnote/log/');
+    define("IMG_DIR", 'src/');
+    define("THUMB_DIR", 'thumbnail/');
+    define("CACHE_DIR", sys_get_temp_dir() . '/petitnote/cache/');
+} else {
+    // 通常環境用の設定
+    define("TEMP_DIR", "temp/");
+    define("LOG_DIR", "log/");
+    define("IMG_DIR", "src/");
+    define("THUMB_DIR", "thumbnail/");
+    define("CACHE_DIR", "template/cache/");
+}
 
 // ディレクトリの作成
 if (!is_dir(TEMP_DIR)) {
     @mkdir(TEMP_DIR, 0777, true);
+}
+if (!is_dir(LOG_DIR)) {
+    @mkdir(LOG_DIR, 0777, true);
 }
 if (!is_dir(IMG_DIR)) {
     @mkdir(IMG_DIR, 0777, true);
 }
 if (!is_dir(THUMB_DIR)) {
     @mkdir(THUMB_DIR, 0777, true);
+}
+if (!is_dir(CACHE_DIR)) {
+    @mkdir(CACHE_DIR, 0777, true);
 }
 

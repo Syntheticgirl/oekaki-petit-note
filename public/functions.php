@@ -920,16 +920,19 @@ function check_csrf_token(): void {
 function session_sta(): void {
 	global $session_name;
 
-	$session_name = $session_name ?? 'session_petit';
-	$httpsonly = (bool)($_SERVER['HTTPS'] ?? '');
+	if (session_status() === PHP_SESSION_NONE) {
+		$session_name = $session_name ?? 'session_petit';
+		$httpsonly = (bool)($_SERVER['HTTPS'] ?? '');
 
-	if(!isset($_SESSION)){
 		ini_set('session.use_strict_mode', 1);
 		session_set_cookie_params(
 			0,"","",$httpsonly,true
 		);
 		session_name($session_name);
 		session_start();
+	}
+
+	if (!isset($_SESSION)) {
 		header('Expires:');
 		header('Cache-Control:');
 		header('Pragma:');
