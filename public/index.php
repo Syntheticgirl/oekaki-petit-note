@@ -7,7 +7,7 @@ if (getenv('VERCEL')) {
         sys_get_temp_dir() . '/petitnote/src',
         sys_get_temp_dir() . '/petitnote/thumbnail',
         sys_get_temp_dir() . '/petitnote/webp',
-        sys_get_temp_dir() . '/petitnote/template/cache'
+        sys_get_temp_dir() . '/petitnote/cache'
     ];
     
     foreach ($dirs as $dir) {
@@ -20,6 +20,11 @@ if (getenv('VERCEL')) {
 // 既存のコード
 require_once 'config.php';
 require_once 'functions.php';
+
+// キャッシュディレクトリの設定
+if (!defined('CACHE_DIR')) {
+    define('CACHE_DIR', getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/cache/' : __DIR__ . '/template/cache/');
+}
 
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
@@ -2455,9 +2460,18 @@ function view(): void {
 	$prev=((int)$page<=0) ? false : ($page-$pagedef);//ページ番号が0の時はprevのリンクを出さない
 	$prev=($prev<0) ? 0 : $prev;
 	if($page===0 && !$admindel && !$adminpost){
+		$index_cache_json = __DIR__.'/template/cache/index_cache.json';
+		$cache_dir = dirname($index_cache_json);
+		
+		// キャッシュディレクトリが存在しない場合は作成
+		if (!is_dir($cache_dir)) {
+			@mkdir($cache_dir, 0777, true);
+		}
+		
+		// キャッシュファイルが存在しない場合は作成
 		if(!is_file($index_cache_json)){
-			file_put_contents($index_cache_json,json_encode($out),LOCK_EX);
-			chmod($index_cache_json,0600);
+			@file_put_contents($index_cache_json, json_encode($out), LOCK_EX);
+			@chmod($index_cache_json, 0600);
 		}
 	}
 	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;

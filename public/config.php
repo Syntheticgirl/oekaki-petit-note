@@ -613,4 +613,6 @@ define("LOG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/log/' : "l
 define("IMG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/src/' : "src/");
 // サムネイル
 define("THUMB_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/thumbnail/' : "thumbnail/");
+// キャッシュ
+define("CACHE_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/cache/' : "template/cache/");
 

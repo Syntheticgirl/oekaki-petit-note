@@ -1137,13 +1137,18 @@ function init(): void {
 		__DIR__."/thumbnail",
 		__DIR__."/log",
 		__DIR__."/webp",
-		__DIR__."/template/cache"
+		CACHE_DIR
 	];
 	
 	foreach ($dirs as $dir) {
 		if (!is_dir($dir)) {
 			@mkdir($dir, 0777, true);
 		}
+	}
+	
+	// キャッシュディレクトリのパーミッションを設定
+	if (is_dir(CACHE_DIR)) {
+		@chmod(CACHE_DIR, 0777);
 	}
 	
 	// R2ストレージが利用可能な場合は、ファイルシステムの操作をスキップ
