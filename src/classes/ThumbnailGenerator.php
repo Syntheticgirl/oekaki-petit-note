@@ -7,10 +7,12 @@ use Aws\S3\S3Client;
 class ThumbnailGenerator {
     private $r2Client;
     private $r2Bucket;
+    private $tempDir;
     
     public function __construct() {
         $this->r2Client = getR2Client();
         $this->r2Bucket = getR2Bucket();
+        $this->tempDir = '/tmp';
     }
     
     public function generateThumbnail($sourceKey, $targetKey, $maxWidth, $maxHeight, $options = []) {
@@ -22,7 +24,7 @@ class ThumbnailGenerator {
             ]);
             
             // 一時ファイルに保存
-            $tempFile = tempnam(sys_get_temp_dir(), 'thumb_');
+            $tempFile = $this->tempDir . '/thumb_' . uniqid();
             file_put_contents($tempFile, $result['Body']);
             
             // 画像を読み込む
@@ -57,7 +59,7 @@ class ThumbnailGenerator {
             );
             
             // 一時ファイルに保存
-            $tempThumbFile = tempnam(sys_get_temp_dir(), 'thumb_');
+            $tempThumbFile = $this->tempDir . '/thumb_' . uniqid();
             
             // WebP形式で保存
             if (isset($options['webp']) && $options['webp']) {
