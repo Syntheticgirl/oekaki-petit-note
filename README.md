@@ -1,0 +1,2 @@
+- vercel.jsonに環境変数設定はいらないらしい(env:とか)
+- でも参考には書いてあるんだよな…(https://note.com/nearprosmith/n/n5f82aa44d333)
