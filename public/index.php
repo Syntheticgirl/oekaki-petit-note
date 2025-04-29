@@ -1,42 +1,4 @@
 <?php
-// 必要なディレクトリを作成
-if (getenv('VERCEL')) {
-    $dirs = [
-        sys_get_temp_dir() . '/petitnote/log',
-        sys_get_temp_dir() . '/petitnote/temp',
-        sys_get_temp_dir() . '/petitnote/src',
-        sys_get_temp_dir() . '/petitnote/thumbnail',
-        sys_get_temp_dir() . '/petitnote/webp',
-        sys_get_temp_dir() . '/petitnote/cache'
-    ];
-    
-    foreach ($dirs as $dir) {
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0777, true);
-        }
-    }
-}
-
-// 既存のコード
-require_once 'config.php';
-require_once 'functions.php';
-require_once 'R2Storage.php';
-
-// R2ストレージの初期化
-if ($use_r2_storage) {
-    $r2Storage = new R2Storage(
-        $r2_account_id,
-        $r2_access_key_id,
-        $r2_secret_access_key,
-        $r2_bucket_name
-    );
-}
-
-// キャッシュディレクトリの設定
-if (!defined('CACHE_DIR')) {
-    define('CACHE_DIR', getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/cache/' : __DIR__ . '/template/cache/');
-}
-
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 $petit_ver='v1.86.0';
@@ -256,7 +218,7 @@ switch($mode){
 	case 'misskey_success':
 		return misskey_note::misskey_success();
 	case 'saveimage':
-		return handleToolImageSave();
+		return saveimage();
 	case 'search':
 		return processsearch::search();
 	case 'catalog':
@@ -2240,7 +2202,7 @@ function set_share_server(): void {
 	include __DIR__.'/'.$skindir.$templete;
 	exit();
 }
-function handleToolImageSave(): void {
+function saveimage(): void {
 	
 	$tool=filter_input_data('GET',"tool");
 
@@ -2262,6 +2224,7 @@ function handleToolImageSave(): void {
 			$image_save->save_klecks();
 			break;
 	}
+
 }
 //カタログ表示
 function catalog(): void {
@@ -2350,39 +2313,20 @@ function view(): void {
 	session_sta();
 	unset ($_SESSION['enableappselect']);
 
-	// alllog.logを開く
-	$logFile = LOG_DIR."alllog.log";
-	if (!is_file($logFile)) {
-		// ファイルが存在しない場合は作成
-		$logDir = dirname($logFile);
-		if (!is_dir($logDir)) {
-			@mkdir($logDir, 0777, true);
+	$fp=fopen(LOG_DIR."alllog.log","r");
+	$article_nos=[];
+	$count_alllog=0;
+	while ($_line = fgets($fp)) {
+		if(!trim($_line)){
+			continue;
 		}
-		@file_put_contents($logFile, '', FILE_APPEND|LOCK_EX);
-		@chmod($logFile, 0600);
-	}
-
-	$fp = @fopen($logFile, 'r');
-	if ($fp === false) {
-		// ファイルを開けなかった場合のエラーハンドリング
-		error_log("Failed to open log file: " . $logFile);
-		$article_nos = [];
-		$count_alllog = 0;
-	} else {
-		$article_nos = [];
-		$count_alllog = 0;
-		while ($_line = fgets($fp)) {
-			if(!trim($_line)){
-				continue;
-			}
-			if($page <= $count_alllog && $count_alllog < $page+$pagedef){
-				list($_no) = explode("\t", trim($_line), 2);
-				$article_nos[] = $_no;    
-			}
-			++$count_alllog;
+		if($page <= $count_alllog && $count_alllog < $page+$pagedef){
+			list($_no)=explode("\t",trim($_line),2);
+			$article_nos[]=$_no;	
 		}
-		fclose($fp);
+		++$count_alllog;//処理の後半で記事数のカウントとして使用
 	}
+	fclose($fp);
 
 	$index_cache_json = __DIR__.'/template/cache/index_cache.json';
 
@@ -2470,18 +2414,9 @@ function view(): void {
 	$prev=((int)$page<=0) ? false : ($page-$pagedef);//ページ番号が0の時はprevのリンクを出さない
 	$prev=($prev<0) ? 0 : $prev;
 	if($page===0 && !$admindel && !$adminpost){
-		$index_cache_json = __DIR__.'/template/cache/index_cache.json';
-		$cache_dir = dirname($index_cache_json);
-		
-		// キャッシュディレクトリが存在しない場合は作成
-		if (!is_dir($cache_dir)) {
-			@mkdir($cache_dir, 0777, true);
-		}
-		
-		// キャッシュファイルが存在しない場合は作成
 		if(!is_file($index_cache_json)){
-			@file_put_contents($index_cache_json, json_encode($out), LOCK_EX);
-			@chmod($index_cache_json, 0600);
+			file_put_contents($index_cache_json,json_encode($out),LOCK_EX);
+			chmod($index_cache_json,0600);
 		}
 	}
 	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;
@@ -2562,8 +2497,8 @@ function res (): void {
 	}
 	//投稿者名の特殊文字を全角に
 	foreach($rresname as $key => $val){
-		$rep=str_replace('&quot;','"',$val);
-		$rep=str_replace('&#039;','\'',$rep);
+		$rep=str_replace('&quot;','”',$val);
+		$rep=str_replace('&#039;','’',$rep);
 		$rep=str_replace('&lt;','＜',$rep);
 		$rep=str_replace('&gt;','＞',$rep);
 		$rresname[$key]=str_replace('&amp;','＆',$rep);
@@ -2687,78 +2622,4 @@ function res (): void {
 	$templete= $res_catalog ? 'res_catalog.html' : 'res.html';
 	include __DIR__.'/'.$skindir.$templete;
 	exit();
-}
-
-// 画像の保存処理
-function saveImage($tempFile, $finalPath) {
-    global $r2Storage;
-    
-    if (isset($r2Storage)) {
-        // R2ストレージに直接保存
-        $content = file_get_contents($tempFile);
-        if ($content === false) {
-            error_log("Failed to read temporary file: " . $tempFile);
-            return false;
-        }
-        
-        $result = $r2Storage->writeFile($finalPath, $content, 'image/png');
-        if (!$result) {
-            error_log("Failed to save image to R2: " . $finalPath);
-            return false;
-        }
-        
-        // 一時ファイルを削除
-        @unlink($tempFile);
-        return true;
-    } else {
-        // 従来のファイルシステム操作
-        if (!is_dir(dirname($finalPath))) {
-            @mkdir(dirname($finalPath), 0777, true);
-        }
-        return @rename($tempFile, $finalPath);
-    }
-}
-
-// 画像のアップロード処理
-function handleImageUpload($tempFile, $time) {
-    global $r2Storage;
-    
-    $finalPath = 'src/' . $time . '.png';
-    return saveImage($tempFile, $finalPath);
-}
-
-// サムネイルの作成処理
-function createThumbnail($sourcePath, $time) {
-    global $r2Storage;
-    
-    $thumbnailPath = 'thumbnail/' . $time . 's.jpg';
-    $thumbnail = make_thumbnail($sourcePath, $time, 300, 300);
-    
-    if ($thumbnail) {
-        if (isset($r2Storage)) {
-            // R2ストレージに直接保存
-            $content = file_get_contents($thumbnail);
-            if ($content === false) {
-                error_log("Failed to read thumbnail: " . $thumbnail);
-                return false;
-            }
-            
-            $result = $r2Storage->writeFile($thumbnailPath, $content, 'image/jpeg');
-            if (!$result) {
-                error_log("Failed to save thumbnail to R2: " . $thumbnailPath);
-                return false;
-            }
-            
-            // 一時ファイルを削除
-            @unlink($thumbnail);
-            return true;
-        } else {
-            // 従来のファイルシステム操作
-            if (!is_dir(dirname($thumbnailPath))) {
-                @mkdir(dirname($thumbnailPath), 0777, true);
-            }
-            return @rename($thumbnail, $thumbnailPath);
-        }
-    }
-    return false;
 }

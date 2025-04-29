@@ -821,44 +821,21 @@ function check_jpeg_exif($upfile): void {
 }
 
 //サムネイル作成
-function make_thumbnail($imgfile, $time, $max_w, $max_h): string {
-	global $use_thumb, $r2Storage;
-	
-	$thumbnail = '';
-	if ($use_thumb) {
-		// スレッドの画像のサムネイルを使う時
-		if (isset($r2Storage)) {
-			// R2ストレージを使用する場合
-			$tempFile = sys_get_temp_dir() . '/petitnote/temp/' . $time . '_thumb.jpg';
-			if (thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h, ['thumbnail_webp' => true])) {
-				$thumbnail = 'thumbnail_webp';
-			}
-			// webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
-			if (!$thumbnail && thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h)) {
-				$thumbnail = 'thumbnail';
-			}
-		} else {
-			// 従来のファイルシステム操作
-			if (thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h, ['thumbnail_webp' => true])) {
-				$thumbnail = 'thumbnail_webp';
-			}
-			// webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
-			if (!$thumbnail && thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h)) {
-				$thumbnail = 'thumbnail';
-			}
+function make_thumbnail($imgfile,$time,$max_w,$max_h): string {
+	global $use_thumb; 
+	$thumbnail='';
+	if($use_thumb){//スレッドの画像のサムネイルを使う時
+		if(thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h,['thumbnail_webp'=>true])){
+			$thumbnail='thumbnail_webp';
+		}
+		//webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
+		if(!$thumbnail && thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h)){
+			$thumbnail='thumbnail';
 		}
 	}
-	
-	// カタログ用webpサムネイル 
-	if (isset($r2Storage)) {
-		// R2ストレージを使用する場合
-		$tempFile = sys_get_temp_dir() . '/petitnote/temp/' . $time . '_catalog.webp';
-		thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, 300, 800, ['webp' => true]);
-	} else {
-		// 従来のファイルシステム操作
-		thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, 300, 800, ['webp' => true]);
-	}
-	
+	//カタログ用webpサムネイル 
+	thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
+
 	return $thumbnail;
 }
 
@@ -920,19 +897,16 @@ function check_csrf_token(): void {
 function session_sta(): void {
 	global $session_name;
 
-	if (session_status() === PHP_SESSION_NONE) {
-		$session_name = $session_name ?? 'session_petit';
-		$httpsonly = (bool)($_SERVER['HTTPS'] ?? '');
+	$session_name = $session_name ?? 'session_petit';
+	$httpsonly = (bool)($_SERVER['HTTPS'] ?? '');
 
+	if(!isset($_SESSION)){
 		ini_set('session.use_strict_mode', 1);
 		session_set_cookie_params(
 			0,"","",$httpsonly,true
 		);
 		session_name($session_name);
 		session_start();
-	}
-
-	if (!isset($_SESSION)) {
 		header('Expires:');
 		header('Cache-Control:');
 		header('Pragma:');
@@ -993,17 +967,8 @@ function check_AsyncRequest($upfile=''): void {
 // テンポラリ内のゴミ除去 
 function deltemp(): void {
 	global $check_password_input_error_count;
-	
-	if (!is_dir(TEMP_DIR)) {
-		return;
-	}
-	
-	$handle = @opendir(TEMP_DIR);
-	if ($handle === false) {
-		return;
-	}
-	
-	while (($file = readdir($handle)) !== false) {
+	$handle = opendir(TEMP_DIR);
+	while ($file = readdir($handle)) {
 		if(!is_dir(TEMP_DIR.$file) && is_file(TEMP_DIR.$file)){
 			$file=basename($file);
 			//pchアップロードペイントファイル削除
@@ -1021,7 +986,6 @@ function deltemp(): void {
 		}
 	}
 	closedir($handle);
-	
 	$_file=__DIR__.'/template/errorlog/error.log';
 	if(!$check_password_input_error_count){
 		safe_unlink($_file);
@@ -1154,58 +1118,23 @@ function is_badhost(): bool {
 
 //初期化
 function init(): void {
-	global $r2Storage;
 	
-	// 必要なディレクトリを作成
-	$dirs = [
-		__DIR__."/src",
-		__DIR__."/temp",
-		__DIR__."/thumbnail",
-		__DIR__."/log",
-		__DIR__."/webp",
-		CACHE_DIR
-	];
-	
-	foreach ($dirs as $dir) {
-		if (!is_dir($dir)) {
-			@mkdir($dir, 0777, true);
-		}
-	}
-	
-	// キャッシュディレクトリのパーミッションを設定
-	if (is_dir(CACHE_DIR)) {
-		@chmod(CACHE_DIR, 0777);
-	}
-	
-	// R2ストレージが利用可能な場合は、ファイルシステムの操作をスキップ
-	if (isset($r2Storage)) {
-		error_log('Using R2 storage for file operations');
-		return;
-	}
-	
-	// 従来のファイルシステム操作（R2が利用できない場合のフォールバック）
-	error_log('Falling back to local file system');
-	$logFile = LOG_DIR.'alllog.log';
-	if(!is_file($logFile)){
-		// ディレクトリが存在することを確認
-		$logDir = dirname($logFile);
-		if (!is_dir($logDir)) {
-			@mkdir($logDir, 0777, true);
-		}
-		// ファイルを作成
-		@file_put_contents($logFile, '', FILE_APPEND|LOCK_EX);
-		@chmod($logFile, 0600);    
+	check_dir(__DIR__."/src");
+	check_dir(__DIR__."/temp");
+	check_dir(__DIR__."/thumbnail");
+	check_dir(__DIR__."/log");
+	check_dir(__DIR__."/webp");
+	check_dir(__DIR__."/template/cache");
+	if(!is_file(LOG_DIR.'alllog.log')){
+	file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
+	chmod(LOG_DIR.'alllog.log',0600);	
 	}
 }
 
 //ディレクトリ作成
 function check_dir ($path): void {
-	$msg=initial_error_message();
 
-	// Vercel環境の場合はファイルシステムの操作をスキップ
-	if (getenv('VERCEL')) {
-		return;
-	}
+	$msg=initial_error_message();
 
 	if (!is_dir($path)) {
 			mkdir($path, 0707);
