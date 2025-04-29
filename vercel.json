@@ -10,6 +10,7 @@
     { "src": "/(.*\\.(?:css|js|png|jpg|jpeg|gif|webp|svg|ico))", "dest": "/public/$1" },
     { "src": "/template/(.*)", "dest": "/public/template/$1" },
     { "src": "/app/(.*)", "dest": "/public/app/$1" },
+    { "src": "/src/(.*)", "dest": "/src/$1" },
     { "src": "/(.*)", "dest": "/api/index.php" }
   ]
 }
