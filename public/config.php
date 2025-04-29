@@ -610,9 +610,9 @@ define("TEMP_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/temp/' : 
 // ログ
 define("LOG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/log/' : "log/");
 // 画像
-define("IMG_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/src/' : "src/");
+define("IMG_DIR", getenv('VERCEL') ? 'src/' : "src/");
 // サムネイル
-define("THUMB_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/thumbnail/' : "thumbnail/");
+define("THUMB_DIR", getenv('VERCEL') ? 'thumbnail/' : "thumbnail/");
 // キャッシュ
 define("CACHE_DIR", getenv('VERCEL') ? sys_get_temp_dir() . '/petitnote/cache/' : "template/cache/");
 

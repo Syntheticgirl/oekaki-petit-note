@@ -1153,10 +1153,12 @@ function init(): void {
 	
 	// R2ストレージが利用可能な場合は、ファイルシステムの操作をスキップ
 	if (isset($r2Storage)) {
+		error_log('Using R2 storage for file operations');
 		return;
 	}
 	
 	// 従来のファイルシステム操作（R2が利用できない場合のフォールバック）
+	error_log('Falling back to local file system');
 	$logFile = LOG_DIR.'alllog.log';
 	if(!is_file($logFile)){
 		// ディレクトリが存在することを確認

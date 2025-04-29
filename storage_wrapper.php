@@ -15,7 +15,13 @@ $r2Config = [
 
 // 環境変数が設定されている場合のみR2ストレージを初期化
 if ($r2Config['endpoint'] && $r2Config['access_key_id'] && $r2Config['secret_access_key'] && $r2Config['bucket']) {
-    $r2Storage = new R2Storage($r2Config);
+    try {
+        $r2Storage = new R2Storage($r2Config);
+        error_log('R2 storage initialized successfully');
+    } catch (Exception $e) {
+        error_log('R2 storage initialization failed: ' . $e->getMessage());
+        $r2Storage = null;
+    }
 } else {
     error_log('R2 storage configuration is incomplete. Falling back to local file system.');
     $r2Storage = null;
