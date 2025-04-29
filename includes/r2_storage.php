@@ -12,16 +12,16 @@ class R2Storage {
     public function __construct() {
         $this->client = new S3Client([
             'version' => 'latest',
-            'region' => getenv('R2_REGION') ?: 'auto',
-            'endpoint' => getenv('R2_ENDPOINT'),
+            'region' => R2_REGION,
+            'endpoint' => R2_ENDPOINT,
             'credentials' => [
-                'key' => getenv('R2_ACCESS_KEY_ID'),
-                'secret' => getenv('R2_SECRET_ACCESS_KEY'),
+                'key' => R2_ACCESS_KEY_ID,
+                'secret' => R2_SECRET_ACCESS_KEY,
             ],
             'use_path_style_endpoint' => true,
         ]);
-        $this->bucket = getenv('R2_BUCKET');
-        $this->publicUrl = getenv('R2_PUBLIC_URL');
+        $this->bucket = R2_BUCKET;
+        $this->publicUrl = R2_PUBLIC_URL;
     }
     
     public function uploadFile($localPath, $key) {
