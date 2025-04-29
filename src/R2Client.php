@@ -8,6 +8,13 @@ class R2Client
 {
     private S3Client $client;
     private string $bucket;
+    private const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private const ALLOWED_TYPES = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/pdf'
+    ];
 
     public function __construct()
     {
@@ -26,6 +33,21 @@ class R2Client
         $this->bucket = getenv('R2_BUCKET');
     }
 
+    public function validateFile(array $file): array
+    {
+        $errors = [];
+
+        if ($file['size'] > self::MAX_FILE_SIZE) {
+            $errors[] = 'File size exceeds limit of 5MB';
+        }
+
+        if (!in_array($file['type'], self::ALLOWED_TYPES)) {
+            $errors[] = 'File type not allowed';
+        }
+
+        return $errors;
+    }
+
     public function uploadFile(string $key, string $content, string $contentType = 'application/octet-stream'): bool
     {
         try {
@@ -35,9 +57,13 @@ class R2Client
                 'Body' => $content,
                 'ContentType' => $contentType,
             ]);
+            Logger::info('File uploaded successfully', ['key' => $key]);
             return true;
         } catch (\Exception $e) {
-            error_log("R2 upload error: " . $e->getMessage());
+            Logger::error('R2 upload error', [
+                'key' => $key,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }
@@ -49,9 +75,13 @@ class R2Client
                 'Bucket' => $this->bucket,
                 'Key' => $key,
             ]);
+            Logger::info('File retrieved successfully', ['key' => $key]);
             return $result['Body']->getContents();
         } catch (\Exception $e) {
-            error_log("R2 get error: " . $e->getMessage());
+            Logger::error('R2 get error', [
+                'key' => $key,
+                'error' => $e->getMessage()
+            ]);
             return null;
         }
     }
@@ -63,9 +93,13 @@ class R2Client
                 'Bucket' => $this->bucket,
                 'Key' => $key,
             ]);
+            Logger::info('File deleted successfully', ['key' => $key]);
             return true;
         } catch (\Exception $e) {
-            error_log("R2 delete error: " . $e->getMessage());
+            Logger::error('R2 delete error', [
+                'key' => $key,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }
