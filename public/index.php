@@ -245,7 +245,7 @@ switch($mode){
 	case 'misskey_success':
 		return misskey_note::misskey_success();
 	case 'saveimage':
-		return saveimage();
+		return handleToolImageSave();
 	case 'search':
 		return processsearch::search();
 	case 'catalog':
@@ -2229,7 +2229,7 @@ function set_share_server(): void {
 	include __DIR__.'/'.$skindir.$templete;
 	exit();
 }
-function saveimage(): void {
+function handleToolImageSave(): void {
 	
 	$tool=filter_input_data('GET',"tool");
 
@@ -2251,7 +2251,6 @@ function saveimage(): void {
 			$image_save->save_klecks();
 			break;
 	}
-
 }
 //カタログ表示
 function catalog(): void {
