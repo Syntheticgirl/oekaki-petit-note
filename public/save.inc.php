@@ -7,16 +7,10 @@ class image_save{
 
 	private $security_timer,$imgfile,$en,$count,$errtext,$session_usercode; // プロパティとして宣言
 	private $tool,$repcode,$stime,$resto,$timer,$error_type,$hide_animation,$pmax_w,$pmax_h;
-	private $r2_client;
 	
 	function __construct(){
 
 		global $security_timer,$pmax_w,$pmax_h;
-
-		require_once __DIR__ . '/../vendor/autoload.php';
-		require_once __DIR__ . '/../src/R2Client.php';
-
-		$this->r2_client = new \App\R2Client();
 
 	// $security_timer=60;	
 	$this->security_timer = $security_timer ?? 0;
@@ -195,15 +189,19 @@ class image_save{
 			}
 		}
 
-		$content = file_get_contents($_FILES['picture']['tmp_name']);
-		$key = 'images/' . $this->imgfile . '.png';
-		
-		if (!$this->r2_client->uploadFile($key, $content, 'image/png')) {
-			$this->error_msg($this->en ? "Failed to upload image to storage." : "画像のアップロードに失敗しました。");
-		}
+		// list($w,$h)=getimagesize($_FILES['picture']['tmp_name']);
 
-		// 一時ファイルを削除
-		@unlink($_FILES['picture']['tmp_name']);
+		// if($w > $this->pmax_w || $h > $this->pmax_h){//幅と高さ
+		// 	//規定サイズ違反を検出しました。画像は保存されません。
+		// 	$this->error_msg($this->en ? "The image dimensions are too large." : "画像のサイズが大きすぎます。");
+		// }
+
+		$success = move_uploaded_file($_FILES['picture']['tmp_name'], TEMP_DIR.$this->imgfile.'.png');
+		
+		if(!$success||!is_file(TEMP_DIR.$this->imgfile.'.png')) {
+			$this->error_msg($this->en ? "Your picture upload failed!\nPlease try again!" : "投稿に失敗。\n時間を置いて再度投稿してみてください。");
+		}
+		chmod(TEMP_DIR.$this->imgfile.'.png',PERMISSION_FOR_DEST);
 	}
 
 	private function move_uploaded_chi(): void {
