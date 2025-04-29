@@ -12,7 +12,7 @@ class ThumbnailGenerator {
     public function __construct() {
         $this->r2Client = getR2Client();
         $this->r2Bucket = getR2Bucket();
-        $this->tempDir = '/tmp';
+        $this->tempDir = getenv('TEMP_DIR') ?: '/tmp';
     }
     
     public function generateThumbnail($sourceKey, $targetKey, $maxWidth, $maxHeight, $options = []) {

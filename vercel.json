@@ -1,13 +1,22 @@
 {
   "functions": {
     "api/**/*.php": {
-      "runtime": "vercel-php@0.7.3"
+      "runtime": "vercel-php@0.7.3",
+      "memory": 1024,
+      "maxDuration": 10
     }
   },
   "routes": [
     { "src": "/(.*\\.(?:css|js|png|jpg|jpeg|gif|webp|svg|ico))", "dest": "/public/$1" },
-    { "src": "/template/(.*)",                                   "dest": "/public/template/$1" },
-    { "src": "/app/(.*)",                                        "dest": "/public/app/$1"      },
+    { "src": "/template/(.*)", "dest": "/public/template/$1" },
+    { "src": "/app/(.*)", "dest": "/public/app/$1" },
     { "src": "/(.*)", "dest": "/api/index.php" }
-  ]
+  ],
+  "env": {
+    "TEMP_DIR": "/tmp",
+    "IMG_DIR": "/tmp",
+    "THUMB_DIR": "/tmp",
+    "LOG_DIR": "/tmp",
+    "WEBP_DIR": "/tmp"
+  }
 }
