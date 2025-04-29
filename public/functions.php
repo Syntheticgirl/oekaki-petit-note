@@ -821,21 +821,44 @@ function check_jpeg_exif($upfile): void {
 }
 
 //サムネイル作成
-function make_thumbnail($imgfile,$time,$max_w,$max_h): string {
-	global $use_thumb; 
-	$thumbnail='';
-	if($use_thumb){//スレッドの画像のサムネイルを使う時
-		if(thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h,['thumbnail_webp'=>true])){
-			$thumbnail='thumbnail_webp';
-		}
-		//webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
-		if(!$thumbnail && thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h)){
-			$thumbnail='thumbnail';
+function make_thumbnail($imgfile, $time, $max_w, $max_h): string {
+	global $use_thumb, $r2Storage;
+	
+	$thumbnail = '';
+	if ($use_thumb) {
+		// スレッドの画像のサムネイルを使う時
+		if (isset($r2Storage)) {
+			// R2ストレージを使用する場合
+			$tempFile = sys_get_temp_dir() . '/petitnote/temp/' . $time . '_thumb.jpg';
+			if (thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h, ['thumbnail_webp' => true])) {
+				$thumbnail = 'thumbnail_webp';
+			}
+			// webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
+			if (!$thumbnail && thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h)) {
+				$thumbnail = 'thumbnail';
+			}
+		} else {
+			// 従来のファイルシステム操作
+			if (thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h, ['thumbnail_webp' => true])) {
+				$thumbnail = 'thumbnail_webp';
+			}
+			// webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
+			if (!$thumbnail && thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, $max_w, $max_h)) {
+				$thumbnail = 'thumbnail';
+			}
 		}
 	}
-	//カタログ用webpサムネイル 
-	thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
-
+	
+	// カタログ用webpサムネイル 
+	if (isset($r2Storage)) {
+		// R2ストレージを使用する場合
+		$tempFile = sys_get_temp_dir() . '/petitnote/temp/' . $time . '_catalog.webp';
+		thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, 300, 800, ['webp' => true]);
+	} else {
+		// 従来のファイルシステム操作
+		thumbnail_gd::thumb(IMG_DIR, $imgfile, $time, 300, 800, ['webp' => true]);
+	}
+	
 	return $thumbnail;
 }
 

@@ -2678,3 +2678,77 @@ function res (): void {
 	include __DIR__.'/'.$skindir.$templete;
 	exit();
 }
+
+// 画像の保存処理
+function saveImage($tempFile, $finalPath) {
+    global $r2Storage;
+    
+    if (isset($r2Storage)) {
+        // R2ストレージに直接保存
+        $content = file_get_contents($tempFile);
+        if ($content === false) {
+            error_log("Failed to read temporary file: " . $tempFile);
+            return false;
+        }
+        
+        $result = $r2Storage->writeFile($finalPath, $content, 'image/png');
+        if (!$result) {
+            error_log("Failed to save image to R2: " . $finalPath);
+            return false;
+        }
+        
+        // 一時ファイルを削除
+        @unlink($tempFile);
+        return true;
+    } else {
+        // 従来のファイルシステム操作
+        if (!is_dir(dirname($finalPath))) {
+            @mkdir(dirname($finalPath), 0777, true);
+        }
+        return @rename($tempFile, $finalPath);
+    }
+}
+
+// 画像のアップロード処理
+function handleImageUpload($tempFile, $time) {
+    global $r2Storage;
+    
+    $finalPath = 'src/' . $time . '.png';
+    return saveImage($tempFile, $finalPath);
+}
+
+// サムネイルの作成処理
+function createThumbnail($sourcePath, $time) {
+    global $r2Storage;
+    
+    $thumbnailPath = 'thumbnail/' . $time . 's.jpg';
+    $thumbnail = make_thumbnail($sourcePath, $time, 300, 300);
+    
+    if ($thumbnail) {
+        if (isset($r2Storage)) {
+            // R2ストレージに直接保存
+            $content = file_get_contents($thumbnail);
+            if ($content === false) {
+                error_log("Failed to read thumbnail: " . $thumbnail);
+                return false;
+            }
+            
+            $result = $r2Storage->writeFile($thumbnailPath, $content, 'image/jpeg');
+            if (!$result) {
+                error_log("Failed to save thumbnail to R2: " . $thumbnailPath);
+                return false;
+            }
+            
+            // 一時ファイルを削除
+            @unlink($thumbnail);
+            return true;
+        } else {
+            // 従来のファイルシステム操作
+            if (!is_dir(dirname($thumbnailPath))) {
+                @mkdir(dirname($thumbnailPath), 0777, true);
+            }
+            return @rename($thumbnail, $thumbnailPath);
+        }
+    }
+    return false;
+}
