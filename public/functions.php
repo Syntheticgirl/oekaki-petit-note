@@ -967,7 +967,17 @@ function check_AsyncRequest($upfile=''): void {
 // テンポラリ内のゴミ除去 
 function deltemp(): void {
 	global $check_password_input_error_count;
+	
+	// Vercel環境の場合はスキップ
+	if (getenv('VERCEL') === '1') {
+		return;
+	}
+
 	$handle = opendir(TEMP_DIR);
+	if ($handle === false) {
+		return;
+	}
+	
 	while ($file = readdir($handle)) {
 		if(!is_dir(TEMP_DIR.$file) && is_file(TEMP_DIR.$file)){
 			$file=basename($file);
@@ -1118,6 +1128,10 @@ function is_badhost(): bool {
 
 //初期化
 function init(): void {
+	// Vercel環境の場合はスキップ
+	if (getenv('VERCEL') === '1') {
+		return;
+	}
 	
 	check_dir(__DIR__."/src");
 	check_dir(__DIR__."/temp");
@@ -1126,8 +1140,8 @@ function init(): void {
 	check_dir(__DIR__."/webp");
 	check_dir(__DIR__."/template/cache");
 	if(!is_file(LOG_DIR.'alllog.log')){
-	file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
-	chmod(LOG_DIR.'alllog.log',0600);	
+		file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
+		chmod(LOG_DIR.'alllog.log',0600);	
 	}
 }
 
