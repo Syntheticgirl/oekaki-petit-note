@@ -464,13 +464,17 @@ function post(): void {
 	$verified = $adminpost ? 'adminpost' : ''; 
 
 	//全体ログを開く
-	chmod(LOG_DIR."alllog.log",0600);
-	$fp=fopen(LOG_DIR."alllog.log","r+");
-	if(!$fp){
-		safe_unlink($upfile);
-		error($en?'This operation has failed.':'失敗しました。');
+	if(is_file(LOG_DIR."alllog.log")){
+		chmod(LOG_DIR."alllog.log",0600);
+		$fp=fopen(LOG_DIR."alllog.log","r+");
+		if(!$fp){
+			safe_unlink($upfile);
+			error($en?'This operation has failed.':'失敗しました。');
+		}
+		file_lock($fp, LOCK_EX);
+	} else {
+		$fp = false;
 	}
-	file_lock($fp, LOCK_EX);
 
 	$alllog_arr = create_array_from_fp($fp);
 	if($resto){//投稿数が0の時には空になるため、レス時のみチェック
@@ -684,7 +688,7 @@ function post(): void {
 			$dp = fopen(LOG_DIR."{$d_no}.log", "r");//個別スレッドのログを開く
 			file_lock($dp, LOCK_EX);
 
-			while ($line = fgets($dp)) {
+			while ($dp && ($line = fgets($dp))) {
 				if(!trim($line)){
 					continue;
 				}
