@@ -1133,8 +1133,12 @@ function init(): void {
 
 //ディレクトリ作成
 function check_dir ($path): void {
-
 	$msg=initial_error_message();
+
+	// Vercel環境の場合はスキップ
+	if (getenv('VERCEL') === '1') {
+		return;
+	}
 
 	if (!is_dir($path)) {
 			mkdir($path, 0707);
