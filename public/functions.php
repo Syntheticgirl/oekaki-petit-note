@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/../src/config/r2.php';
-
 $functions_ver=20250416;
 //編集モードログアウト
 function logout(): void {
@@ -823,28 +821,21 @@ function check_jpeg_exif($upfile): void {
 }
 
 //サムネイル作成
-function make_thumbnail($imgfile, $time, $max_w, $max_h): string {
-	global $use_thumb;
-	$thumbnail = '';
-	
-	if ($use_thumb) {
-		$generator = new ThumbnailGenerator();
-		
-		// WebPサムネイルを試行
-		if ($generator->generateThumbnail($imgfile, $time.'s.webp', $max_w, $max_h, ['webp' => true])) {
-			$thumbnail = 'thumbnail_webp';
+function make_thumbnail($imgfile,$time,$max_w,$max_h): string {
+	global $use_thumb; 
+	$thumbnail='';
+	if($use_thumb){//スレッドの画像のサムネイルを使う時
+		if(thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h,['thumbnail_webp'=>true])){
+			$thumbnail='thumbnail_webp';
 		}
-		
-		// JPEGサムネイルを試行
-		if (!$thumbnail && $generator->generateThumbnail($imgfile, $time.'s.jpg', $max_w, $max_h)) {
-			$thumbnail = 'thumbnail';
+		//webpのサムネイルが作成できなかった時はjpegのサムネイルを作る
+		if(!$thumbnail && thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h)){
+			$thumbnail='thumbnail';
 		}
 	}
-	
-	// カタログ用WebPサムネイル
-	$generator = new ThumbnailGenerator();
-	$generator->generateThumbnail($imgfile, $time.'t.webp', 300, 800, ['webp' => true]);
-	
+	//カタログ用webpサムネイル 
+	thumbnail_gd::thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
+
 	return $thumbnail;
 }
 
@@ -1127,40 +1118,40 @@ function is_badhost(): bool {
 
 //初期化
 function init(): void {
-	// Vercel環境では/tmpディレクトリを使用
-	$tempDir = getenv('TEMP_DIR') ?: '/tmp';
 	
-	// 一時ディレクトリの存在確認
-	if (!is_dir($tempDir)) {
-		error('Temporary directory not found');
-	}
-	
-	// ログファイルの初期化
-	$logFile = $tempDir . '/alllog.log';
-	if (!is_file($logFile)) {
-		file_put_contents($logFile, '', FILE_APPEND | LOCK_EX);
+	check_dir(__DIR__."/src");
+	check_dir(__DIR__."/temp");
+	check_dir(__DIR__."/thumbnail");
+	check_dir(__DIR__."/log");
+	check_dir(__DIR__."/webp");
+	check_dir(__DIR__."/template/cache");
+	if(!is_file(LOG_DIR.'alllog.log')){
+	file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
+	chmod(LOG_DIR.'alllog.log',0600);	
 	}
 }
 
 //ディレクトリ作成
 function check_dir ($path): void {
-	// Vercel環境では/tmpディレクトリを使用
-	$tempDir = getenv('TEMP_DIR') ?: '/tmp';
-	
-	// パスが/tmpディレクトリ内かチェック
-	if (strpos($path, $tempDir) !== 0) {
-		error('Invalid directory path');
-	}
-	
-	// ディレクトリの存在確認
+
+	$msg=initial_error_message();
+
 	if (!is_dir($path)) {
-		error('Directory not found: ' . $path);
+			mkdir($path, 0707);
+			chmod($path, 0707);
 	}
-	
-	// 読み書き権限の確認
-	if (!is_readable($path) || !is_writable($path)) {
-		error('Directory not accessible: ' . $path);
+	if (!is_readable($path) || !is_writable($path)){
+		chmod($path, 0707);
 	}
+	if (!is_dir($path)){
+		die(h($path) . $msg['001']);
+	}
+	if (!is_readable($path)){
+		die(h($path) . $msg['002']);
+	} 
+	if (!is_writable($path)){
+		die(h($path) . $msg['003']);
+	} 
 }
 
 // ファイル存在チェック
@@ -1567,89 +1558,4 @@ function filter_input_data(string $input, string $key, int $filter=0) {
 		default:
 			return $value;  // 他のフィルタはそのまま返す
 	}
-}
-
-function get_image_url($imgfile) {
-    $r2Client = getR2Client();
-    $r2Bucket = getR2Bucket();
-    
-    try {
-        // プリサインドURLの有効期限を1時間に設定
-        $cmd = $r2Client->getCommand('GetObject', [
-            'Bucket' => $r2Bucket,
-            'Key'    => $imgfile
-        ]);
-        
-        $request = $r2Client->createPresignedRequest($cmd, '+1 hour');
-        $url = (string) $request->getUri();
-        
-        // CDNのURLに変換（設定されている場合）
-        if (defined('CDN_URL') && CDN_URL) {
-            $url = str_replace(
-                'https://' . $_ENV['R2_ACCOUNT_ID'] . '.r2.cloudflarestorage.com',
-                CDN_URL,
-                $url
-            );
-        }
-        
-        return $url;
-    } catch (Exception $e) {
-        return '';
-    }
-}
-
-function delete_image($imgfile, $time) {
-    $r2Client = getR2Client();
-    $r2Bucket = getR2Bucket();
-    
-    try {
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $imgfile
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'s.jpg'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'s.webp'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'t.webp'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'.pch'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'.spch'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'.chi'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'.psd'
-        ]);
-        
-        $r2Client->deleteObject([
-            'Bucket' => $r2Bucket,
-            'Key'    => $time.'.tgkr'
-        ]);
-    } catch (Exception $e) {
-        // エラーは無視して続行
-    }
-    
-    delete_res_cache();
 }

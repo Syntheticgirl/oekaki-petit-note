@@ -2,15 +2,11 @@
 //Petit Note 2021-2024 (c)satopian MIT Licence
 //https://paintbbs.sakura.ne.jp/
 
-require_once __DIR__ . '/../src/config/r2.php';
-
 $save_inc_ver=20250308;
 class image_save{
 
 	private $security_timer,$imgfile,$en,$count,$errtext,$session_usercode; // プロパティとして宣言
 	private $tool,$repcode,$stime,$resto,$timer,$error_type,$hide_animation,$pmax_w,$pmax_h;
-	private $r2Client;
-	private $r2Bucket;
 	
 	function __construct(){
 
@@ -40,8 +36,6 @@ class image_save{
 	$this->pmax_w= $pmax_w ?? '';
 	$this->pmax_h= $pmax_h ?? '';
 	
-	$this->r2Client = getR2Client();
-	$this->r2Bucket = getR2Bucket();
 	}
 
 	public function save_klecks(): void { 
@@ -202,31 +196,22 @@ class image_save{
 		// 	$this->error_msg($this->en ? "The image dimensions are too large." : "画像のサイズが大きすぎます。");
 		// }
 
-		try {
-			$this->r2Client->putObject([
-				'Bucket' => $this->r2Bucket,
-				'Key'    => $this->imgfile.'.png',
-				'Body'   => fopen($_FILES['picture']['tmp_name'], 'rb'),
-				'ContentType' => 'image/png'
-			]);
-		} catch (Exception $e) {
+		$success = move_uploaded_file($_FILES['picture']['tmp_name'], TEMP_DIR.$this->imgfile.'.png');
+		
+		if(!$success||!is_file(TEMP_DIR.$this->imgfile.'.png')) {
 			$this->error_msg($this->en ? "Your picture upload failed!\nPlease try again!" : "投稿に失敗。\n時間を置いて再度投稿してみてください。");
 		}
+		chmod(TEMP_DIR.$this->imgfile.'.png',PERMISSION_FOR_DEST);
 	}
 
 	private function move_uploaded_chi(): void {
 		if(isset($_FILES['chibifile']) && ($_FILES['chibifile']['error'] == UPLOAD_ERR_OK)){
 			if(mime_content_type($_FILES['chibifile']['tmp_name'])==="application/octet-stream"){
 				if(!SIZE_CHECK || ($_FILES['chibifile']['size'] < (PSD_MAX_KB * 1024))){
-					try {
-						$this->r2Client->putObject([
-							'Bucket' => $this->r2Bucket,
-							'Key'    => $this->imgfile.'.chi',
-							'Body'   => fopen($_FILES['chibifile']['tmp_name'], 'rb'),
-							'ContentType' => 'application/octet-stream'
-						]);
-					} catch (Exception $e) {
-						// エラーは無視して続行
+					//chiファイルのアップロードができなかった場合はエラーメッセージはださず、画像のみ投稿する。 
+					move_uploaded_file($_FILES['chibifile']['tmp_name'], TEMP_DIR.$this->imgfile.'.chi');
+					if(is_file(TEMP_DIR.$this->imgfile.'.chi')){
+						chmod(TEMP_DIR.$this->imgfile.'.chi',PERMISSION_FOR_DEST);
 					}
 				}
 			}
@@ -236,15 +221,10 @@ class image_save{
 		if(isset($_FILES['psd']) && ($_FILES['psd']['error'] == UPLOAD_ERR_OK)){
 			if(mime_content_type($_FILES['psd']['tmp_name'])==="image/vnd.adobe.photoshop"){
 				if(!SIZE_CHECK || ($_FILES['psd']['size'] < (PSD_MAX_KB * 1024))){
-					try {
-						$this->r2Client->putObject([
-							'Bucket' => $this->r2Bucket,
-							'Key'    => $this->imgfile.'.psd',
-							'Body'   => fopen($_FILES['psd']['tmp_name'], 'rb'),
-							'ContentType' => 'image/vnd.adobe.photoshop'
-						]);
-					} catch (Exception $e) {
-						// エラーは無視して続行
+					//PSDファイルのアップロードができなかった場合はエラーメッセージはださず、画像のみ投稿する。 
+					move_uploaded_file($_FILES['psd']['tmp_name'], TEMP_DIR.$this->imgfile.'.psd');
+					if(is_file(TEMP_DIR.$this->imgfile.'.psd')){
+						chmod(TEMP_DIR.$this->imgfile.'.psd',PERMISSION_FOR_DEST);
 					}
 				}
 			}
@@ -252,15 +232,10 @@ class image_save{
 		if(isset($_FILES['tgkr']) && ($_FILES['tgkr']['error'] == UPLOAD_ERR_OK)){
 			if(mime_content_type($_FILES['tgkr']['tmp_name'])==="application/octet-stream"){
 				if(!SIZE_CHECK || ($_FILES['tgkr']['size'] < (PSD_MAX_KB * 1024))){
-					try {
-						$this->r2Client->putObject([
-							'Bucket' => $this->r2Bucket,
-							'Key'    => $this->imgfile.'.tgkr',
-							'Body'   => fopen($_FILES['tgkr']['tmp_name'], 'rb'),
-							'ContentType' => 'application/octet-stream'
-						]);
-					} catch (Exception $e) {
-						// エラーは無視して続行
+					//PSDファイルのアップロードができなかった場合はエラーメッセージはださず、画像のみ投稿する。 
+					move_uploaded_file($_FILES['tgkr']['tmp_name'], TEMP_DIR.$this->imgfile.'.tgkr');
+					if(is_file(TEMP_DIR.$this->imgfile.'.tgkr')){
+						chmod(TEMP_DIR.$this->imgfile.'.tgkr',PERMISSION_FOR_DEST);
 					}
 				}
 			}
@@ -270,15 +245,10 @@ class image_save{
 		if(isset($_FILES['pch']) && ($_FILES['pch']['error'] == UPLOAD_ERR_OK)){
 			if(mime_content_type($_FILES['pch']['tmp_name'])==="application/octet-stream"){
 				if(!SIZE_CHECK || ($_FILES['pch']['size'] < (PSD_MAX_KB * 1024))){
-					try {
-						$this->r2Client->putObject([
-							'Bucket' => $this->r2Bucket,
-							'Key'    => $this->imgfile.'.pch',
-							'Body'   => fopen($_FILES['pch']['tmp_name'], 'rb'),
-							'ContentType' => 'application/octet-stream'
-						]);
-					} catch (Exception $e) {
-						// エラーは無視して続行
+					//PSDファイルのアップロードができなかった場合はエラーメッセージはださず、画像のみ投稿する。 
+					move_uploaded_file($_FILES['pch']['tmp_name'], TEMP_DIR.$this->imgfile.'.pch');
+					if(is_file(TEMP_DIR.$this->imgfile.'.pch')){
+						chmod(TEMP_DIR.$this->imgfile.'.pch',PERMISSION_FOR_DEST);
 					}
 				}
 			}
