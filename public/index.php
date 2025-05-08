@@ -464,17 +464,26 @@ function post(): void {
 	$verified = $adminpost ? 'adminpost' : ''; 
 
 	//全体ログを開く
-	if(is_file(LOG_DIR."alllog.log")){
-		chmod(LOG_DIR."alllog.log",0600);
-		$fp=fopen(LOG_DIR."alllog.log","r+");
-		if(!$fp){
+	$log_file = LOG_DIR."alllog.log";
+	if(!is_dir(LOG_DIR)) {
+		if(!mkdir(LOG_DIR, 0777, true)) {
 			safe_unlink($upfile);
-			error($en?'This operation has failed.':'失敗しました。');
+			error($en?'Failed to create log directory.':'ログディレクトリの作成に失敗しました。');
 		}
-		file_lock($fp, LOCK_EX);
-	} else {
-		$fp = false;
 	}
+	if(!is_file($log_file)){
+		if(!touch($log_file)){
+			safe_unlink($upfile);
+			error($en?'Failed to create log file.':'ログファイルの作成に失敗しました。');
+		}
+	}
+	chmod($log_file,0600);
+	$fp=fopen($log_file,"r+");
+	if(!$fp){
+		safe_unlink($upfile);
+		error($en?'This operation has failed.':'失敗しました。');
+	}
+	file_lock($fp, LOCK_EX);
 
 	$alllog_arr = create_array_from_fp($fp);
 	if($resto){//投稿数が0の時には空になるため、レス時のみチェック
